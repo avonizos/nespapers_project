@@ -1,0 +1,9 @@
+To copy files:
+
+python postediting.py 700000 2011 02 2013 02 izvestia sovsport
+
+
+
+To build csv table and make flat xml files:
+
+python postediting.py path_to_results path_to_new_results results_table.csv -convert
