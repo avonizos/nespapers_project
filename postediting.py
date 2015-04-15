@@ -9,6 +9,7 @@ import random
 import sys
 import newspapers
 
+
 # Input string example:
 # python.exe postediting.py 100000 2012 10 2013 10 izvestia
 
@@ -27,12 +28,8 @@ class Newspaper:
     def eval_period(self, period_start_year, period_start_month, period_end_year, period_end_month, domain):
         if period_start_year == period_end_year:
             for j in range(period_start_month, period_end_month + 1):
-                if j < 10 and str(j)[0] != 0:
-                    self.period.append(os.path.join(os.path.dirname(__file__), domain) +
-                                       '\\' + str(period_start_year) + '\\0' + str(j))
-                else:
-                    self.period.append(os.path.join(os.path.dirname(__file__), domain) +
-                                       '\\' + str(period_start_year) + '\\' + str(j))
+                self.period.append(os.path.join(os.path.dirname(__file__),
+                                                domain, str(period_start_year), str(j)))
         else:
             for i in range(period_start_year, period_end_year + 1):
                 if i == period_start_year:
@@ -46,11 +43,10 @@ class Newspaper:
                     cur_end_month = 12
                 for j in range(cur_start_month, cur_end_month + 1):
                     if j < 10:
-                        self.period.append(os.path.join(os.path.dirname(__file__), domain) +
-                                           '\\' + str(i) + '\\0' + str(j))
+                        month_str = '0' + str(j)
                     else:
-                        self.period.append(os.path.join(os.path.dirname(__file__), domain) +
-                                           '\\' + str(i) + '\\' + str(j))
+                        month_str = str(j)
+                    self.period.append(os.path.join(os.path.dirname(__file__), domain, str(i), month_str))
             # Create results folder
                 if not os.path.exists(new_path):
                     os.makedirs(new_path)
@@ -94,51 +90,62 @@ class Newspaper:
             print u'Not enough words in the requested period'
         else:
             for i in self.folders:
+                words_in_folder = 0
                 current_wordcount = 0
+                for j in self.folders[i]:
+                    words_in_folder = words_in_folder + self.folders[i][j]
                 if words_in_folder > self.average_per_folder:
-                    for j in self.folders[i]:
+                    chosen_keys = []
+                    while current_wordcount < self.average_per_folder:
                         random_file = random.choice(self.folders[i].keys())
+                        chosen_keys.append(random_file)
                         if self.folders[i][random_file] < 300:
                             while self.folders[i][random_file] < 300:
                                 random_file = random.choice(self.folders[i].keys())
                         if random_file not in used_keys:
+                            if not os.path.exists(os.path.join(new_path,
+                                                               os.path.basename(os.path.dirname(os.path.dirname(i))),
+                                                               os.path.basename(os.path.dirname(i)),
+                                                               os.path.basename(i),
+                                                               os.path.basename(os.path.dirname(random_file)))):
+                                os.makedirs(os.path.join(new_path,
+                                                         os.path.basename(os.path.dirname(os.path.dirname(i))),
+                                                         os.path.basename(os.path.dirname(i)),
+                                                         os.path.basename(i),
+                                                         os.path.basename(os.path.dirname(random_file))))
+                            shutil.copy2(random_file, os.path.join(new_path,
+                                         os.path.basename(os.path.dirname
+                                                          (os.path.dirname
+                                                           (os.path.dirname(random_file)))),
+                                         os.path.basename(os.path.dirname
+                                                          (os.path.dirname(random_file))),
+                                         os.path.basename(os.path.dirname(random_file)),
+                                         os.path.basename(random_file)))
+                            print u'Words in the file copied: ' + str(self.folders[i][random_file])
+                            self.words_copied += self.folders[i][random_file]
+                            used_keys.append(random_file)
                             current_wordcount += int(self.folders[i][random_file])
-                            if current_wordcount < self.average_per_folder:
-                                    if not os.path.exists(new_path + '\\' +
-                                                          os.path.basename(os.path.dirname(os.path.dirname(i))) + '\\' +
-                                                          os.path.basename(os.path.dirname(i)) + '\\' +
-                                                          os.path.basename(i)):
-                                        os.makedirs(new_path + '\\' +
-                                                    os.path.basename(os.path.dirname(os.path.dirname(i))) + '\\' +
-                                                    os.path.basename(os.path.dirname(i)) + '\\' + os.path.basename(i))
-                                    shutil.copy2(random_file,  new_path + '\\' +
-                                                 os.path.basename(os.path.dirname
-                                                                  (os.path.dirname
-                                                                   (os.path.dirname(random_file)))) + '\\' +
-                                                 os.path.basename(os.path.dirname
-                                                                  (os.path.dirname(random_file))) + '\\' +
-                                                 os.path.basename(os.path.dirname(random_file)) + '\\' +
-                                                 os.path.basename(random_file))
-                                    print u'Words in the file copied: ' + str(self.folders[i][random_file])
-                                    self.words_copied += self.folders[i][random_file]
-                                    used_keys.append(random_file)
+                        if len(chosen_keys) == len(self.folders[i]):
+                            break
                 else:
-                    current_wordcount += int(self.folders[i][j])
-                    print str(self.folders[i][j])
-                    if current_wordcount < self.average_per_folder:
-                        if self.folders[i][j] > 300:
-                            if not os.path.exists(new_path + '\\' +
-                                                  os.path.basename(os.path.dirname(os.path.dirname(i))) + '\\' +
-                                                  os.path.basename(os.path.dirname(i))):
-                                os.makedirs(new_path + '\\' +
-                                            os.path.basename(os.path.dirname(os.path.dirname(i))) + '\\' +
-                                            os.path.basename(os.path.dirname(i)))
-                            shutil.copy2(j, new_path + '\\' +
-                                         os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(j)))) + '\\' +
-                                         os.path.basename(os.path.dirname(os.path.dirname(j))) + '\\' +
-                                         os.path.basename(os.path.dirname(j)) + os.path.basename(j))
-                            print u'Words in the file copied: ' + str(self.folders[i][j])
-                            self.words_copied += self.folders[i][j]
+                    if current_wordcount <= self.average_per_folder:
+                        for j in self.folders[i]:
+                            if self.folders[i][j] >= 300:
+                                if not os.path.exists(os.path.join(new_path,
+                                                      os.path.basename(os.path.dirname(os.path.dirname(i))),
+                                                      os.path.basename(os.path.dirname(i)),
+                                                      os.path.basename(os.path.dirname(j)))):
+                                    os.makedirs(os.path.join(new_path,
+                                                os.path.basename(os.path.dirname(os.path.dirname(i))),
+                                                os.path.basename(os.path.dirname(i)),
+                                                os.path.basename(os.path.dirname(j))))
+                                shutil.copy2(j, os.path.join(new_path,
+                                                 os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(j)))),
+                                                 os.path.basename(os.path.dirname(os.path.dirname(j))),
+                                                 os.path.basename(os.path.dirname(j)), os.path.basename(j)))
+                                print u'Words in the file copied: ' + str(self.folders[i][j])
+                                self.words_copied += self.folders[i][j]
+                                current_wordcount += int(self.folders[i][j])
             print u'Total amount from ' + self.domain + ': ' + str(self.words_copied)
 
 
