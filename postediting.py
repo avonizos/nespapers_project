@@ -78,22 +78,22 @@ class Newspaper:
                             int(search_wordcount.group(1))
 
     # Copy files
-    def copy_files(self, requested_word_amount):
-        words_in_folder = 0
-        words_all_folders = 0
-        used_keys = []
+    def copy_files(self, domain, requested_word_amount, actual_word_amount): # Function for copying files
+        words_all_folders = 0 # Amount of words in all folders in the requested period
         for i in self.folders:
             for j in self.folders[i]:
-                words_in_folder = words_in_folder + self.folders[i][j]
-            words_all_folders += words_in_folder
-        if words_all_folders < requested_word_amount:
+                words_all_folders += self.folders[i][j] # Count all words in all folders
+        if words_all_folders < requested_word_amount: # If the amount of words in all folders less than the requested amount
+                                                      # ->
+                                                      # print 'not enough'
             print u'Not enough words in the requested period'
-        else:
-            for i in self.folders:
-                words_in_folder = 0
-                current_wordcount = 0
+        else: # If everything's OK
+            for i in self.folders: # Start walking through the folders
+                used_keys = [] # Used random keys from folder
+                words_in_folder = 0 # Counter for all words in the current folder
+                current_wordcount = 0 # Counter for words copied
                 for j in self.folders[i]:
-                    words_in_folder = words_in_folder + self.folders[i][j]
+                    words_in_folder += self.folders[i][j] # Count all words in the current folder
                 if words_in_folder > self.average_per_folder:
                     chosen_keys = []
                     while current_wordcount < self.average_per_folder:
@@ -124,7 +124,7 @@ class Newspaper:
                             print u'Words in the file copied: ' + str(self.folders[i][random_file])
                             self.words_copied += self.folders[i][random_file]
                             used_keys.append(random_file)
-                            current_wordcount += int(self.folders[i][random_file])
+                            current_wordcount += self.folders[i][random_file]
                         if len(chosen_keys) == len(self.folders[i]):
                             break
                 else:
@@ -145,7 +145,27 @@ class Newspaper:
                                                  os.path.basename(os.path.dirname(j)), os.path.basename(j)))
                                 print u'Words in the file copied: ' + str(self.folders[i][j])
                                 self.words_copied += self.folders[i][j]
-                                current_wordcount += int(self.folders[i][j])
+                                current_wordcount += self.folders[i][j]
+            print u'Total amount from ' + self.domain + ': ' + str(self.words_copied)
+            if self.words_copied > actual_word_amount:
+                            i = random.choice(self.folders.keys())
+                            while self.words_copied > actual_word_amount:
+                                 random_file = random.choice(self.folders[i].keys())
+                                 random_file_to_delete = os.path.join(new_path,
+                                             os.path.basename(os.path.dirname
+                                                              (os.path.dirname
+                                                               (os.path.dirname(random_file)))),
+                                             os.path.basename(os.path.dirname
+                                                              (os.path.dirname(random_file))),
+                                             os.path.basename(os.path.dirname(random_file)),
+                                             os.path.basename(random_file))
+                                 if os.path.exists(random_file_to_delete):
+                                     os.remove(random_file_to_delete)
+                                     print u'Deleted file: ' + random_file_to_delete + u' ' + str(self.folders[i][random_file]) + u' words'
+                                     self.words_copied -= self.folders[i][random_file]
+                                 else:
+                                     i = random.choice(self.folders.keys())
+
             print u'Total amount from ' + self.domain + ': ' + str(self.words_copied)
 
 
@@ -160,9 +180,11 @@ def main():
         copies[i].domain = domains[i]
         copies[i].eval_period(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]), domains[i])
         copies[i].count_dirs(domains[i])
-        copies[i].count_average(int(sys.argv[1])/len(domains))
+        word_amount = (int(sys.argv[1])/len(domains)) + int(sys.argv[1])/(len(domains)*2)
+        actual_word_amount = int(sys.argv[1])/len(domains)
+        copies[i].count_average(word_amount)
         copies[i].find_wordcount(domains[i])
-        copies[i].copy_files(int(sys.argv[1])/len(domains))
+        copies[i].copy_files(domains[i], word_amount, actual_word_amount)
         all_words_copied += copies[i].words_copied
     print 'Total amount: ' + str(all_words_copied)
     if "-convert" in sys.argv:
