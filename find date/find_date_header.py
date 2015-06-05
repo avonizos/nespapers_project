@@ -5,6 +5,7 @@ import codecs
 import re
 import os
 
+
 # to convert date to the format d(d).mm.yy(yy)
 def convert_date(raw_date):
     # for replacing the words by numbers at the end
@@ -117,11 +118,67 @@ def find_date(article):
     result_date = convert_date(raw_date)
     return result_date
 
+# for finding a header
+
+def lcs(a, b):
+    lengths = [[0 for j in range(len(b)+1)] for i in range(len(a)+1)]
+    # row 0 and column 0 are initialized to 0 already
+    for i, x in enumerate(a):
+        for j, y in enumerate(b):
+            if x == y:
+                lengths[i+1][j+1] = lengths[i][j] + 1
+            else:
+                lengths[i+1][j+1] = \
+                    max(lengths[i+1][j], lengths[i][j+1])
+    # read the substring out from the matrix
+    result = ""
+    x, y = len(a), len(b)
+    while x != 0 and y != 0:
+        if lengths[x][y] == lengths[x-1][y]:
+            x -= 1
+        elif lengths[x][y] == lengths[x][y-1]:
+            y -= 1
+        else:
+            assert a[x-1] == b[y-1]
+            result = a[x-1] + result
+            x -= 1
+            y -= 1
+    return result
+
+
+def find_header(article):
+    f = codecs.open(article, 'r', 'utf-8')
+    text = f.read()
+    root = etree.XML(text, etree.HTMLParser())
+    raw_header = ''
+    result_header = ''
+    possible_lcs = []
+    for d in root.iter():
+        # case for sovsport, izvestia. rbc, ria, kp  ng;
+        # meduza - name of newspaper is there
+        # kommersant - the second entry is perfect, the first with name of the newspaper
+        if d.tag == 'meta':
+            for attr in d.attrib:
+                if 'title' in d.attrib[attr]:
+                    raw_header = d.attrib['content']
+        # search for lcs in the content to delete name of newspaper
+        if d.tag == 'div' or d.tag == 'h1' or d.tag == 'h2': # maybe add some other tags for other newspapers
+            for child in d:
+                if child.text is not None:
+                    possible_lcs.append(lcs(child.text, raw_header))
+    # the longest from all lcs -- perfect header
+    max_length = max(len(s) for s in possible_lcs)
+    for string in possible_lcs:
+        if len(string) == max_length:
+            result_header = string
+    return result_header
+
+
 # test
 for root, dirs, files in os.walk('./test_date/'):
     for file in files:
         test = os.path.join(root, file)
-        print test, find_date(test)
+        print test, find_date(test), find_header(test)
 
-# test = './test_date/meduza1.html'
-# print test, find_date(test)
+# test = './test_date/gazeta1.html'
+# print test, find_header(test)
