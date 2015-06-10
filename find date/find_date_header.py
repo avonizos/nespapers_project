@@ -2,7 +2,7 @@
 
 from lxml import etree
 import codecs
-from datetime import date
+import datetime
 import re
 import os
 
@@ -60,8 +60,15 @@ def find_date(article):
                     result_date = convert_date(raw_date)
                     return result_date
                 else:
+                    if u'вчера' in d.text:
+                        today = datetime.date.today()
+                        yesterday = today - datetime.timedelta(days=1)
+                        result_date = str(yesterday.day) + '.' + str(yesterday.month) + '.' + str(yesterday.year)
+                        return result_date
                     if u'сегодня' in d.text:
-                        print date.today()
+                        today = datetime.date.today()
+                        result_date = str(today.day) + '.' + str(today.month) + '.' + str(today.year)
+                        return result_date
 
 
         # case for izvestia with 'date'
