@@ -2,6 +2,7 @@
 
 from lxml import etree
 import codecs
+from datetime import date
 import re
 import os
 
@@ -23,7 +24,6 @@ def convert_date(raw_date):
             found_date = re.search(u'([0-9]{1,2}[.-/ ][0-9]{1,2}[.-/ ][0-9]{2,4}).*', raw_date) # to delete time
             if found_date is not None:
                 raw_date = found_date.group(1)
-
     result_date = re.sub(u'[ /-]', u'.', raw_date)
     return result_date
 
@@ -59,6 +59,10 @@ def find_date(article):
                     raw_date = found_date.group(1)
                     result_date = convert_date(raw_date)
                     return result_date
+                else:
+                    if u'сегодня' in d.text:
+                        print date.today()
+
 
         # case for izvestia with 'date'
         if 'time' in d.attrib or 'date' in d.attrib:
@@ -157,15 +161,25 @@ def find_header(article):
         # case for sovsport, izvestia. rbc, ria, kp  ng;
         # meduza - name of newspaper is there
         # kommersant - the second entry is perfect, the first with name of the newspaper
-        if d.tag == 'meta':
-            for attr in d.attrib:
-                if 'title' in d.attrib[attr]:
-                    raw_header = d.attrib['content']
+        if d.tag == 'title':
+            raw_header = d.text
+            if raw_header[0] == ' ':
+                raw_header = raw_header.lstrip()
+            #print raw_header
         # search for lcs in the content to delete name of newspaper
-        if d.tag == 'div' or d.tag == 'h1' or d.tag == 'h2': # maybe add some other tags for other newspapers
-            for child in d:
-                if child.text is not None:
-                    possible_lcs.append(lcs(child.text, raw_header))
+        part = raw_header[len(raw_header)/6:len(raw_header)/4]
+        if d.tag == 'h1' or d.tag == 'h2':
+            if d.text is not None:
+                if part in d.text:
+                    if part in lcs(d.text, raw_header):
+                        possible_lcs.append(lcs(d.text, raw_header))
+        if not possible_lcs:
+            if d.tag == 'div' or d.tag == 'span':
+                if d.text is not None:
+                    if part in d.text:
+                        if part in lcs(d.text, raw_header):
+                            possible_lcs.append(lcs(d.text, raw_header))
+    #print possible_lcs
     # the longest from all lcs -- perfect header
     max_length = max(len(s) for s in possible_lcs)
     for string in possible_lcs:
@@ -180,5 +194,5 @@ for root, dirs, files in os.walk('./test_date/'):
         test = os.path.join(root, file)
         print test, find_date(test), find_header(test)
 
-# test = './test_date/gazeta1.html'
-# print test, find_header(test)
+#test = './test_date/kp13.html'
+#print test, find_date(test), find_header(test)
