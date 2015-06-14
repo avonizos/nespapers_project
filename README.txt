@@ -32,7 +32,7 @@ postediting/
 --Преобразование xml файлов и создание мета-таблицы--
 
 В командной строке ввести:
-python postediting.py <путь к папке с балансированным корпусом> <путь к новой папке> <название_таблицы.csv> -convert
+python postediting.py <путь к папке с cбалансированным корпусом> <путь к новой папке> <название_таблицы.csv> -convert
 
 Пример:
 python postediting.py postediting/results postediting/new_results meta.csv -convert
